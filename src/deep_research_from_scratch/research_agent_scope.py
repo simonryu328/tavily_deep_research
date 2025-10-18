@@ -8,7 +8,7 @@ This module implements the scoping phase of the research workflow, where we:
 The workflow uses structured output to make deterministic decisions about
 whether sufficient context exists to proceed with research.
 """
-
+import re
 from datetime import datetime
 from typing_extensions import Literal
 
@@ -81,24 +81,54 @@ def write_research_brief(state: AgentState):
         ))
     ])
 
-    # Update state with generated research brief and pass it to the supervisor
+    # Convert criteria list → dict with all False initially (not yet evaluated)
+    # success_criteria_dict = {criterion: False for criterion in response.success_criteria}
+
     return {
         "research_brief": response.research_brief,
+        # "success_criteria": success_criteria_dict,
         "supervisor_messages": [HumanMessage(content=f"{response.research_brief}.")]
     }
 
+
+def parse_success_criteria(state: AgentState):
+    """
+    Extracts success criteria from the research brief and updates the AgentState
+    with a dictionary mapping each criterion to False (not yet evaluated).
+    """
+    brief = state.get("research_brief", "")
+    criteria_dict = {}
+
+    if not brief:
+        return {"success_criteria": {}}
+
+    # --- Extract text after "Success Criteria" section ---
+    match = re.search(r"Success Criteria(.*)", brief, flags=re.IGNORECASE | re.DOTALL)
+    if match:
+        section_text = match.group(1).strip()
+        # Capture each bullet (• or -) line as an individual criterion
+        lines = re.findall(r"[•\-]\s*(.+)", section_text)
+        for line in lines:
+            clean_line = re.sub(r"\s+", " ", line).strip()
+            if clean_line:
+                criteria_dict[clean_line] = False
+
+    return {"success_criteria": criteria_dict}
+
 # ===== GRAPH CONSTRUCTION =====
 
-# Build the scoping workflow
 deep_researcher_builder = StateGraph(AgentState, input_schema=AgentInputState)
 
 # Add workflow nodes
 deep_researcher_builder.add_node("clarify_with_user", clarify_with_user)
 deep_researcher_builder.add_node("write_research_brief", write_research_brief)
+deep_researcher_builder.add_node("parse_success_criteria", parse_success_criteria)  # ✅ new node
 
 # Add workflow edges
 deep_researcher_builder.add_edge(START, "clarify_with_user")
-deep_researcher_builder.add_edge("write_research_brief", END)
+deep_researcher_builder.add_edge("clarify_with_user", "write_research_brief")
+deep_researcher_builder.add_edge("write_research_brief", "parse_success_criteria")  # ✅ link new node
+deep_researcher_builder.add_edge("parse_success_criteria", END)
 
 # Compile the workflow
 scope_research = deep_researcher_builder.compile()
