@@ -12,6 +12,7 @@ from langchain_core.messages import BaseMessage
 from langgraph.graph import MessagesState
 from langgraph.graph.message import add_messages
 from pydantic import BaseModel, Field
+from typing import Dict
 
 # ===== STATE DEFINITIONS =====
 
@@ -30,14 +31,16 @@ class AgentState(MessagesState):
 
     # Research brief generated from user conversation history
     research_brief: Optional[str]
+    # Use dictionary for key–value success criteria tracking
+    success_criteria: Annotated[Dict[str, bool], operator.or_] = Field(default_factory=dict)
     # Messages exchanged with the supervisor agent for coordination
-    supervisor_messages: Annotated[Sequence[BaseMessage], add_messages]
+    supervisor_messages: Annotated[Sequence[BaseMessage], operator.add]
     # Raw unprocessed research notes collected during the research phase
     raw_notes: Annotated[list[str], operator.add] = []
     # Processed and structured notes ready for report generation
     notes: Annotated[list[str], operator.add] = []
     # Final formatted research report
-    final_report: str
+    final_report: Optional[str]
 
 # ===== STRUCTURED OUTPUT SCHEMAS =====
 
@@ -55,8 +58,25 @@ class ClarifyWithUser(BaseModel):
     )
 
 class ResearchQuestion(BaseModel):
-    """Schema for structured research brief generation."""
+    """Schema for structured research brief generation.
+
+    Represents a complete research planning output that includes:
+    - a detailed research brief describing what and how to research, and
+    - a list of success criteria defining what constitutes a high-quality outcome.
+    """
 
     research_brief: str = Field(
-        description="A research question that will be used to guide the research.",
+        description=(
+            "A detailed research brief that interprets the user’s intent, "
+            "frames objectives, identifies constraints, and specifies deliverables "
+            "to guide the research process."
+        ),
     )
+
+    # success_criteria: List[str] = Field(
+    #     description=(
+    #         "A list of specific, measurable criteria that define what successful "
+    #         "research looks like. Each item should describe a clear quality or "
+    #         "completeness condition (e.g., 'Includes official sources and verified dates')."
+    #     ),
+    #)
