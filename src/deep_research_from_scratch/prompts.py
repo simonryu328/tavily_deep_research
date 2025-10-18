@@ -44,47 +44,69 @@ For the verification message when no clarification is needed:
 - Keep the message concise and professional
 """
 
-transform_messages_into_research_topic_prompt = """You will be given a set of messages that have been exchanged so far between yourself and the user. 
-Your job is to translate these messages into a more detailed and concrete research question that will be used to guide the research.
+transform_messages_into_research_topic_prompt = """
+<role>
+You are an expert research strategist who transforms conversations into comprehensive, actionable research briefs that demonstrate deep understanding of user intent and strategic planning.
+</role>
 
-The messages that have been exchanged so far between yourself and the user are:
-<Messages>
-{messages}
-</Messages>
+<task>
+Generate a strategic research brief from the conversation that interprets underlying needs, frames concrete objectives, identifies constraints, specifies deliverables, and acknowledges uncertainties.
+</task>
 
-Today's date is {date}.
+<inputs>
+<messages>{messages}</messages>
+<current_date>{date}</current_date>
+</inputs>
 
-You will return a single research question that will be used to guide the research.
+<guidelines>
+Your research brief must demonstrate these strategic dimensions:
+1. **Intent Understanding**: What is the user trying to accomplish? What decision will they make?
+2. **Constraint Identification**: Hard requirements vs soft preferences vs open dimensions
+3. **Context Synthesis**: Timing, urgency, domain expertise, risk factors
+4. **Deliverable Clarity**: Specific, actionable outputs with imperative framing ("Deliver the following:")
+5. **Source Standards**: What's authoritative? What needs verification?
+6. **Ethical Boundaries**: Appropriate disclaimers and professional consultation notes
+7. **Uncertainty**: What's confirmed vs inferred vs assumed?
 
-Guidelines:
-1. Maximize Specificity and Detail
-- Include all known user preferences and explicitly list key attributes or dimensions to consider.
-- It is important that all details from the user are included in the instructions.
+**Key Requirements:**
+- Write in **first person** for context/intent; use **imperative instructions** for deliverables
+- **Natural flow** (300-400 words), not rigid templates
+- **Interpret** user needs, don't just transcribe requests
+- **Distinguish**: must-haves from nice-to-haves; stated facts from open considerations
+- **Specify sources**: Official/primary sources over aggregators; original papers over summaries
+- Include disclaimers for financial/medical advice and note when professional consultation is recommended
+- End with a **"Success Criteria"** section listing 4-6 specific, actionable checkpoints that define research completion
+</guidelines>
 
-2. Handle Unstated Dimensions Carefully
-- When research quality requires considering additional dimensions that the user hasn't specified, acknowledge them as open considerations rather than assumed preferences.
-- Example: Instead of assuming "budget-friendly options," say "consider all price ranges unless cost constraints are specified."
-- Only mention dimensions that are genuinely necessary for comprehensive research in that domain.
+<example>
+<conversation>
+User: "How is IBM watsonx Orchestrate built? What technologies does it use – exactly what APIs, is it using LangGraph? Langfuse? Langflow?"
+Assistant: "To provide an accurate and detailed answer, could you clarify a few things: Are you asking about the overall architecture of watsonx Orchestrate as a product, or its underlying orchestration and agent runtime layer? Do you want a breakdown of specific frameworks and APIs used internally (e.g., LangGraph, LangChain, or proprietary IBM tools)? Should I focus on public technical documentation or internal IBM developer architecture details? This will help me tailor the explanation to the level of depth you want."
+User: "I'm interested in the underlying architecture — specifically how the orchestration and agent runtime works. I want to know which frameworks it integrates with and whether LangGraph, Langfuse, or Langflow are actually part of it."
+</conversation>
 
-3. Avoid Unwarranted Assumptions
-- Never invent specific user preferences, constraints, or requirements that weren't stated.
-- If the user hasn't provided a particular detail, explicitly note this lack of specification.
-- Guide the researcher to treat unspecified aspects as flexible rather than making assumptions.
+<output_example>
+I'm investigating the underlying architecture of IBM watsonx Orchestrate, specifically the orchestration and agent runtime layer—not marketing overviews of what the product does. I need implementation-level detail: which frameworks are integrated, what APIs are exposed to developers, and definitive answers on whether LangGraph, Langfuse, or Langflow are part of the system.
 
-4. Distinguish Between Research Scope and User Preferences
-- Research scope: What topics/dimensions should be investigated (can be broader than user's explicit mentions)
-- User preferences: Specific constraints, requirements, or preferences (must only include what user stated)
-- Example: "Research coffee quality factors (including bean sourcing, roasting methods, brewing techniques) for San Francisco coffee shops, with primary focus on taste as specified by the user."
+This is technical due diligence, likely for an integration decision or competitive analysis. The word "exactly" in my question signals that I have low tolerance for vague or marketing language. I'm familiar enough with the LLM orchestration ecosystem to ask about specific frameworks, so the research should match that technical depth—assume I can read API documentation and architectural diagrams.
 
-5. Use the First Person
-- Phrase the request from the perspective of the user.
+What I need to understand is: How does IBM actually implement the orchestration logic? Is it proprietary, or are they using/integrating open-source frameworks? For the three frameworks I mentioned specifically, I need yes/no answers with evidence, not "it's possible" or "similar to." I also recognize that some internal implementation details may be proprietary and not publicly documented—that's fine, but the research should explicitly acknowledge where the public documentation ends.
 
-6. Sources
-- If specific sources should be prioritized, specify them in the research question.
-- For product and travel research, prefer linking directly to official or primary websites (e.g., official brand sites, manufacturer pages, or reputable e-commerce platforms like Amazon for user reviews) rather than aggregator sites or SEO-heavy blogs.
-- For academic or scientific queries, prefer linking directly to the original paper or official journal publication rather than survey papers or secondary summaries.
-- For people, try linking directly to their LinkedIn profile, or their personal website if they have one.
-- If the query is in a specific language, prioritize sources published in that language.
+**Deliver the following:** Definitive integration status for each framework (LangGraph: yes/no with evidence, Langfuse: yes/no with evidence, Langflow: yes/no with evidence). Document the developer-facing APIs and SDKs available for building with watsonx Orchestrate (specific endpoints, protocols, language support). Describe the architectural patterns used in the orchestration layer (supervisor model, routing mechanisms, agent coordination approaches). List any other frameworks or proprietary IBM technologies involved in the runtime. Distinguish clearly between what's confirmed in official IBM documentation versus what's inferred from technical blogs or community sources. Acknowledge gaps where internal implementation details are not public. Prioritize official IBM technical documentation, developer guides, and API references over marketing materials. Include version information and timestamps on all technical claims since this ecosystem evolves rapidly.
+
+### Success Criteria
+- LangGraph integration status confirmed: yes or no with specific evidence from official sources
+- Langfuse integration status confirmed: yes or no with specific evidence from official sources
+- Langflow integration status confirmed: yes or no with specific evidence from official sources
+- Developer-facing APIs documented: specific endpoints, protocols, authentication methods
+- Orchestration architecture patterns described: how supervisor/routing/coordination works
+- Clear distinction made: official IBM docs vs expert technical blogs vs inferred information
+</output_example>
+</example>
+
+<output_format>
+Return a single string containing the complete research brief (300-400 words) with natural paragraphs, a "Deliver the following:" section with imperative instructions, and a "Success Criteria" section with 4-6 bullet points defining research completion.
+</output_format>
 """
 
 research_agent_prompt =  """You are a research assistant conducting research on the user's input topic. For context, today's date is {date}.
