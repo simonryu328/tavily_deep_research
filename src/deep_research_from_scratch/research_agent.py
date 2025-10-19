@@ -13,13 +13,13 @@ from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage, fi
 from langchain.chat_models import init_chat_model
 
 from deep_research_from_scratch.state_research import ResearcherState, ResearcherOutputState
-from deep_research_from_scratch.utils import tavily_search, tavily_extract, get_today_str, think_tool
+from deep_research_from_scratch.utils import tavily_search, tavily_extract, tavily_map, get_today_str, think_tool
 from deep_research_from_scratch.prompts import research_agent_prompt, compress_research_system_prompt, compress_research_human_message
 
 # ===== CONFIGURATION =====
 
 # Set up tools and model binding
-tools = [tavily_search, tavily_extract, think_tool]
+tools = [tavily_search, tavily_extract, tavily_map, think_tool]
 tools_by_name = {tool.name: tool for tool in tools}
 
 # Initialize models

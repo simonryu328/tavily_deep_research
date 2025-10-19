@@ -256,6 +256,7 @@ def tavily_extract(
 
             formatted_output += (
                 f"--- SOURCE {i}: {title} ---\nURL: {url}\n\n"
+                f"SUMMARY:\n"
                 f"<summary>\n{summary.summary}\n</summary>\n\n"
                 f"<key_excerpts>\n{summary.key_excerpts}\n</key_excerpts>\n"
                 f"{'-'*80}\n"
@@ -265,6 +266,39 @@ def tavily_extract(
             formatted_output += f"--- SOURCE {i} ---\nURL: {url}\nFailed: {e}\n{'-'*80}\n"
 
     return formatted_output
+
+@tool(parse_docstring=True)
+def tavily_map(
+    base_url: str,
+) -> str:
+    """Discover internal links from a website using Tavily's Map API.
+
+    Args:
+        base_url: The root URL to begin traversal (e.g., "https://docs.tavily.com").
+
+    Returns:
+        Formatted string listing discovered pages from the mapped site.
+    """
+    try:
+        response = tavily_client.map(base_url)
+        discovered_urls = response.get("results", [])
+
+        if not discovered_urls:
+            return f"--- SITE MAP DISCOVERY ---\nBase URL: {base_url}\n\nNo pages were discovered."
+
+        formatted_output = (
+            f"--- SITE MAP DISCOVERY ---\n"
+            f"Base URL: {base_url}\n\n"
+            f"Discovered Pages:\n"
+        )
+
+        for url in discovered_urls:
+            formatted_output += f"  - {url}\n"
+
+        return formatted_output.strip()
+
+    except Exception as e:
+        return f"Failed to map site '{base_url}': {e}"
 
 @tool(parse_docstring=True)
 def think_tool(reflection: str) -> str:
