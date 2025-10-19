@@ -90,7 +90,6 @@ def write_research_brief(state: AgentState):
         "supervisor_messages": [HumanMessage(content=f"{response.research_brief}.")]
     }
 
-
 def parse_success_criteria(state: AgentState):
     """
     Extracts success criteria from the research brief and updates the AgentState
