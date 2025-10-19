@@ -211,6 +211,62 @@ def tavily_search(
     return format_search_output(summarized_results)
 
 @tool(parse_docstring=True)
+def tavily_extract(
+    urls: List[str],
+    extract_depth: Annotated[str, InjectedToolArg] = "basic",
+) -> str:
+    """Extract and summarize content from webpages using Tavily's Extract API.
+
+    Args:
+        urls: List of webpage URLs to extract content from.
+        extract_depth: Extraction depth ('basic' or 'advanced').
+
+    Returns:
+        Formatted string summary of extracted and summarized content.
+    """
+    if not urls:
+        return "No URLs provided for extraction."
+
+    structured_model = summarization_model.with_structured_output(Summary)
+    formatted_output = "Extraction results:\n\n"
+
+    for i, url in enumerate(urls, 1):
+        try:
+            # ✅ Tavily expects a list under `urls`
+            response = tavily_client.extract(
+                urls=[url],
+                extract_depth=extract_depth,
+                include_raw_content=True,
+            )
+            results = response.get("results", [])
+            doc = results[0] if results else {}
+
+            title = doc.get("title", "Untitled Document")
+            content = doc.get("raw_content") or doc.get("content", "")
+            if not content:
+                formatted_output += f"--- SOURCE {i}: {title} ---\nURL: {url}\nNo content extracted.\n{'-'*80}\n"
+                continue
+
+            summary = structured_model.invoke([
+                HumanMessage(content=summarize_webpage_prompt.format(
+                    webpage_content=content[:4000],
+                    date=get_today_str()
+                ))
+            ])
+
+            formatted_output += (
+                f"--- SOURCE {i}: {title} ---\nURL: {url}\n\n"
+                f"<summary>\n{summary.summary}\n</summary>\n\n"
+                f"<key_excerpts>\n{summary.key_excerpts}\n</key_excerpts>\n"
+                f"{'-'*80}\n"
+            )
+
+        except Exception as e:
+            formatted_output += f"--- SOURCE {i} ---\nURL: {url}\nFailed: {e}\n{'-'*80}\n"
+
+    return formatted_output
+
+@tool(parse_docstring=True)
 def think_tool(reflection: str) -> str:
     """Tool for strategic reflection on research progress and decision-making.
 
