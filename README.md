@@ -1,204 +1,309 @@
-# 🧱 Deep Research From Scratch 
+## **Tavily Deep Research Agent**
 
-Deep research has broken out as one of the most popular agent applications. [OpenAI](https://openai.com/index/introducing-deep-research/), [Anthropic](https://www.anthropic.com/engineering/built-multi-agent-research-system), [Perplexity](https://www.perplexity.ai/hub/blog/introducing-perplexity-deep-research), and [Google](https://gemini.google/overview/deep-research/?hl=en) all have deep research products that produce comprehensive reports using [various sources](https://www.anthropic.com/news/research) of context. There are also many [open](https://huggingface.co/blog/open-deep-research) [source](https://github.com/google-gemini/gemini-fullstack-langgraph-quickstart) implementations. We built an [open deep researcher](https://github.com/langchain-ai/open_deep_research) that is simple and configurable, allowing users to bring their own models, search tools, and MCP servers. In this repo, we'll build a deep researcher from scratch! Here is a map of the major pieces that we will build:
+### **Executive Summary**
 
-![overview](https://github.com/user-attachments/assets/b71727bd-0094-40c4-af5e-87cdb02123b4)
+This project extends the original LangChain "Deep Research From Scratch" repository with architectural improvements focused on **tool-informed research continuity** and **strategic research planning**. 
+The main changes include:
 
-## 🚀 Quickstart 
-
-### Prerequisites
-
-- **Node.js and npx** (required for MCP server in notebook 3):
-```bash
-# Install Node.js (includes npx)
-# On macOS with Homebrew:
-brew install node
-
-# On Ubuntu/Debian:
-curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-sudo apt-get install -y nodejs
-
-# Verify installation:
-node --version
-npx --version
-```
-
-- Ensure you're using Python 3.11 or later.
-- This version is required for optimal compatibility with LangGraph.
-```bash
-python3 --version
-```
-- [uv](https://docs.astral.sh/uv/) package manager
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-# Update PATH to use the new uv version
-export PATH="/Users/$USER/.local/bin:$PATH"
-```
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/langchain-ai/deep_research_from_scratch
-cd deep_research_from_scratch
-```
-
-2. Install the package and dependencies (this automatically creates and manages the virtual environment):
-```bash
-uv sync
-```
-
-3. Create a `.env` file in the project root with your API keys:
-```bash
-# Create .env file
-touch .env
-```
-
-Add your API keys to the `.env` file:
-```env
-# Required for research agents with external search
-TAVILY_API_KEY=your_tavily_api_key_here
-
-# Required for model usage
-OPENAI_API_KEY=your_openai_api_key_here
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
-
-# Optional: For evaluation and tracing
-LANGSMITH_API_KEY=your_langsmith_api_key_here
-LANGSMITH_TRACING=true
-LANGSMITH_PROJECT=deep_research_from_scratch
-```
-
-4. Run notebooks or code using uv:
-```bash
-# Run Jupyter notebooks directly
-uv run jupyter notebook
-
-# Or activate the virtual environment if preferred
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-jupyter notebook
-```
-
-## Background 
-
-Research is an open‑ended task; the best strategy to answer a user request can’t be easily known in advance. Requests can require different research strategies and varying levels of search depth. Consider this request. 
-
-[Agents](https://langchain-ai.github.io/langgraph/tutorials/workflows/#agent) are well suited to research because they can flexibly apply different strategies, using intermediate results to guide their exploration. Open deep research uses an agent to conduct research as part of a three step process:
-
-1. **Scope** – clarify research scope
-2. **Research** – perform research
-3. **Write** – produce the final report
-
-## 📝 Organization 
-
-This repo contains 5 tutorial notebooks that build a deep research system from scratch:
-
-### 📚 Tutorial Notebooks
-
-#### 1. User Clarification and Brief Generation (`notebooks/1_scoping.ipynb`)
-**Purpose**: Clarify research scope and transform user input into structured research briefs
-
-**Key Concepts**:
-- **User Clarification**: Determines if additional context is needed from the user using structured output
-- **Brief Generation**: Transforms conversations into detailed research questions
-- **LangGraph Commands**: Using Command system for flow control and state updates
-- **Structured Output**: Pydantic schemas for reliable decision making
-
-**Implementation Highlights**:
-- Two-step workflow: clarification → brief generation
-- Structured output models (`ClarifyWithUser`, `ResearchQuestion`) to prevent hallucination
-- Conditional routing based on clarification needs
-- Date-aware prompts for context-sensitive research
-
-**What You'll Learn**: State management, structured output patterns, conditional routing
+1. **Tavily API Expansion**: Expanding from single `tavily_search` to a strategic three-tool workflow (`tavily_search` → `tavily_map` → `tavily_extract`)
+2. **Strategic Brief Generation**: Transforming research brief generation from simple questions to comprehensive strategic briefs with success criteria
+3. **Success Criteria Tracking**: Implementing automated success criteria tracking for research completion evaluation
 
 ---
 
-#### 2. Research Agent with Custom Tools (`notebooks/2_research_agent.ipynb`)
-**Purpose**: Build an iterative research agent using external search tools
+## **1. Project Foundation & Fork Context**
 
-**Key Concepts**:
-- **Agent Architecture**: LLM decision node + tool execution node pattern
-- **Sequential Tool Execution**: Reliable synchronous tool execution
-- **Search Integration**: Tavily search with content summarization
-- **Tool Execution**: ReAct-style agent loop with tool calling
+### **Original Repository Overview**
+The project builds upon the LangChain "Deep Research From Scratch" tutorial, which demonstrates:
+- **Three-phase architecture**: Scope → Research → Write
+- **Multi-agent coordination**: Supervisor pattern with parallel sub-agents
+- **Basic Tavily integration**: Single `tavily_search` tool for web research
+- **Structured output patterns**: Pydantic schemas for reliable decision-making
 
-**Implementation Highlights**:
-- Synchronous tool execution for reliability and simplicity
-- Content summarization to compress search results
-- Iterative research loop with conditional routing
-- Rich prompt engineering for comprehensive research
+### **Key Architectural Decisions Made**
 
-**What You'll Learn**: Agent patterns, tool integration, search optimization, research workflow design
+The fork introduces three architectural changes that improve research quality and reasoning continuity:
 
 ---
 
-#### 3. Research Agent with MCP (`notebooks/3_research_agent_mcp.ipynb`)
-**Purpose**: Integrate Model Context Protocol (MCP) servers as research tools
+## **1. Tavily API Expansion**
 
-**Key Concepts**:
-- **Model Context Protocol**: Standardized protocol for AI tool access
-- **MCP Architecture**: Client-server communication via stdio/HTTP
-- **LangChain MCP Adapters**: Seamless integration of MCP servers as LangChain tools
-- **Local vs Remote MCP**: Understanding transport mechanisms
+### **Original Implementation**
+```python
+# Original: Single search tool
+tools = [tavily_search, think_tool]
+```
 
-**Implementation Highlights**:
-- `MultiServerMCPClient` for managing MCP servers
-- Configuration-driven server setup (filesystem example)
-- Rich formatting for tool output display
-- Async tool execution required by MCP protocol (no nested event loops needed)
+### **Enhanced Implementation**
+```python
+# Enhanced: Multi-tool strategic workflow
+tools = [tavily_search, tavily_extract, tavily_map, think_tool]
+```
 
-**What You'll Learn**: MCP integration, client-server architecture, protocol-based tool access
+### **Strategic Research Pattern**
 
----
+**Before**: `Search → Think → Search → Think` (limited extraction and search depth)
 
-#### 4. Research Supervisor (`notebooks/4_research_supervisor.ipynb`)
-**Purpose**: Multi-agent coordination for complex research tasks
+**After**: `Search → Map → Extract → Think` (comprehensive exploration)
 
-**Key Concepts**:
-- **Supervisor Pattern**: Coordination agent + worker agents
-- **Parallel Research**: Concurrent research agents for independent topics using parallel tool calls
-- **Research Delegation**: Structured tools for task assignment
-- **Context Isolation**: Separate context windows for different research topics
+#### **Tool Capabilities Added**
 
-**Implementation Highlights**:
-- Two-node supervisor pattern (`supervisor` + `supervisor_tools`)
-- Parallel research execution using `asyncio.gather()` for true concurrency
-- Structured tools (`ConductResearch`, `ResearchComplete`) for delegation
-- Enhanced prompts with parallel research instructions
-- Comprehensive documentation of research aggregation patterns
+1. **`tavily_extract`** (Commit: `1245bbe`)
+   - **Purpose**: Extract and summarize full webpage content from specific URLs
+   - **Use Case**: Deep content analysis after identifying promising sources
+   - **Strategic Value**: Enables comprehensive content understanding vs. truncated search summaries
 
-**What You'll Learn**: Multi-agent patterns, parallel processing, research coordination, async orchestration
+2. **`tavily_map`** (Commit: `e124858`)
+   - **Purpose**: Discover all internal pages from a base website URL
+   - **Use Case**: Systematic exploration of documentation hubs and authoritative domains
+   - **Strategic Value**: Ensures comprehensive coverage of authoritative sources
 
----
+#### **Research Workflow Evolution**
 
-#### 5. Full Multi-Agent Research System (`notebooks/5_full_agent.ipynb`)
-**Purpose**: Complete end-to-end research system integrating all components
+The expanded toolkit enables a research progression:
 
-**Key Concepts**:
-- **Three-Phase Architecture**: Scope → Research → Write
-- **System Integration**: Combining scoping, multi-agent research, and report generation
-- **State Management**: Complex state flow across subgraphs
-- **End-to-End Workflow**: From user input to final research report
+```
+🔍` Search (broad exploration) 
+    ↓
+🗺️ Map (systematic domain exploration)
+    ↓  
+📄 Extract (deep content analysis)
+    ↓
+🧠 Think (strategic evaluation)
+```
 
-**Implementation Highlights**:
-- Complete workflow integration with proper state transitions
-- Supervisor and researcher subgraphs with output schemas
-- Final report generation with research synthesis
-- Thread-based conversation management for clarification
-
-**What You'll Learn**: System architecture, subgraph composition, end-to-end workflows
+This pattern allows the agent to:
+- **Start broad** with comprehensive searches
+- **Identify authoritative domains** through mapping
+- **Extract targeted content** for deep analysis
+- **Maintain context continuity** throughout the process
 
 ---
 
-### 🎯 Key Learning Outcomes
+---
 
-- **Structured Output**: Using Pydantic schemas for reliable AI decision making
-- **Async Orchestration**: Strategic use of async patterns for parallel coordination vs synchronous simplicity
-- **Agent Patterns**: ReAct loops, supervisor patterns, multi-agent coordination
-- **Search Integration**: External APIs, MCP servers, content processing
-- **Workflow Design**: LangGraph patterns for complex multi-step processes
-- **State Management**: Complex state flows across subgraphs and nodes
-- **Protocol Integration**: MCP servers and tool ecosystems
+## **2. Research Brief Generation: From Questions to Strategic Briefs**
 
-Each notebook builds on the previous concepts, culminating in a production-ready deep research system that can handle complex, multi-faceted research queries with intelligent scoping and coordinated execution. 
+### **Original Prompt** (Before Enhancement)
+
+```python
+transform_messages_into_research_topic_prompt = """
+Your job is to translate these messages into a more detailed and concrete research question that will be used to guide the research.
+
+You will return a single research question that will be used to guide the research.
+"""
+```
+
+**Limitations**:
+- **Single question focus**: Treats research as answering one question
+- **No strategic planning**: Lacks consideration of research methodology
+- **No success criteria**: No clear definition of completion
+- **Limited context interpretation**: Transcribes rather than interprets user needs
+
+### **Enhanced Strategic Brief Generation** (Commit: `1d3f1f4`)
+
+```python
+transform_messages_into_research_topic_prompt = """
+<role>
+You are an expert research strategist who transforms conversations into comprehensive, actionable research briefs that demonstrate deep understanding of user intent and strategic planning.
+</role>
+
+<task>
+Generate a strategic research brief from the conversation that interprets underlying needs, frames concrete objectives, identifies constraints, specifies deliverables, and acknowledges uncertainties.
+</task>
+```
+
+### **Strategic Dimensions Added**
+
+1. **Intent Understanding**: What is the user trying to accomplish?
+2. **Constraint Identification**: Hard requirements vs. soft preferences
+3. **Context Synthesis**: Timing, urgency, domain expertise, risk factors
+4. **Deliverable Clarity**: Specific, actionable outputs with imperative framing
+5. **Source Standards**: What's authoritative? What needs verification?
+6. **Ethical Boundaries**: Appropriate disclaimers and professional consultation notes
+7. **Uncertainty**: What's confirmed vs. inferred vs. assumed?
+
+### **Example Transformation**
+
+**Before**: "Research IBM watsonx Orchestrate architecture"
+
+**After**: 
+```
+I'm investigating the underlying architecture of IBM watsonx Orchestrate, specifically the orchestration and agent runtime layer—not marketing overviews of what the product does. I need implementation-level detail: which frameworks are integrated, what APIs are exposed to developers, and definitive answers on whether LangGraph, Langfuse, or Langflow are part of the system.
+
+**Deliver the following:** Definitive integration status for each framework (LangGraph: yes/no with evidence, Langfuse: yes/no with evidence, Langflow: yes/no with evidence). Document the developer-facing APIs and SDKs available for building with watsonx Orchestrate...
+
+### Success Criteria
+- LangGraph integration status confirmed: yes or no with specific evidence from official sources
+- Langfuse integration status confirmed: yes or no with specific evidence from official sources
+- Langflow integration status confirmed: yes or no with specific evidence from official sources
+- Developer-facing APIs documented: specific endpoints, protocols, authentication methods
+- Orchestration architecture patterns described: how supervisor/routing/coordination works
+- Clear distinction made: official IBM docs vs expert technical blogs vs inferred information
+```
+
+---
+
+## **3. Success Criteria Implementation: Research Completion Tracking**
+
+### **State Management Enhancement** (Commit: `f5f60b9`)
+
+```python
+class AgentState(MessagesState):
+    # Use dictionary for key–value success criteria tracking
+    success_criteria: Annotated[Dict[str, bool], operator.or_] = Field(default_factory=dict)
+```
+
+### **Success Criteria Parsing** (Commit: `b321655`)
+
+```python
+def parse_success_criteria(state: AgentState):
+    """
+    Extracts success criteria from the research brief and updates the AgentState
+    with a dictionary mapping each criterion to False (not yet evaluated).
+    """
+    brief = state.get("research_brief", "")
+    criteria_dict = {}
+    
+    # Extract text after "Success Criteria" section
+    match = re.search(r"Success Criteria(.*)", brief, flags=re.IGNORECASE | re.DOTALL)
+    if match:
+        section_text = match.group(1).strip()
+        # Capture each bullet (• or -) line as an individual criterion
+        lines = re.findall(r"[•\-]\s*(.+)", section_text)
+        for line in lines:
+            clean_line = re.sub(r"\s+", " ", line).strip()
+            if clean_line:
+                criteria_dict[clean_line] = False
+    
+    return {"success_criteria": criteria_dict}
+```
+
+### **Current Implementation Status**
+
+**Implemented**:
+- ✅ Success criteria extraction from research briefs
+- ✅ Dictionary-based tracking in agent state
+- ✅ Integration with research brief generation
+
+**Future Enhancement** (Next Step):
+- 🔄 **Real-time evaluation**: Use criteria as "to-dos" for research completeness
+- 🔄 **Dynamic completion logic**: Improve `should_complete` research logic based on criteria satisfaction
+- 🔄 **Progress tracking**: Visual indicators of research progress against success criteria
+
+---
+
+## **4. Research Agent Prompt Evolution: Strategic Research Guidance**
+
+### **Original Prompt Focus**
+```python
+research_agent_prompt = """You are a research assistant conducting research on the user's input topic.
+Your job is to use tools to gather information about the user's input topic.
+```
+
+### **Enhanced Strategic Prompt** (Commit: `beffaa5`)
+
+```python
+research_agent_prompt = """You are an expert research assistant conducting strategic research based on the user's research brief and success criteria. Your goal is to deliver findings that directly address the brief's objectives.
+```
+
+### **Key Improvements**
+
+1. **Brief-Driven Research**: Research guided by strategic brief rather than simple topic
+2. **Success Criteria Integration**: Research decisions informed by completion criteria
+3. **Tool Selection Strategy**: Clear guidance on when to use each tool
+4. **Transparent Thinking**: Emphasis on making research process auditable
+
+### **Tool Usage Guidance Evolution**
+
+**Before**: Generic tool calling with basic search patterns
+
+**After**: Strategic tool progression with clear decision criteria:
+
+```python
+**Research Progression**: Start broad (search) → explore promising domains (map) → extract targeted content (extract) → reflect and decide (think). Adapt this flow based on what you discover.
+
+**CRITICAL**: Always use `think_tool` after each search, map, or extraction to make your research process transparent and auditable.
+```
+
+---
+
+## **6. Implementation Timeline & Commit Analysis**
+
+### **Development Progression** (October 18-20, 2025)
+
+1. **Research Brief Enhancement** (`1d3f1f4`): Strategic brief generation
+2. **Success Criteria Foundation** (`f5f60b9`): State management for criteria tracking
+3. **Criteria Parsing** (`b321655`): Automated extraction from briefs
+4. **Tavily Extract Tool** (`1245bbe`): Deep content analysis capability
+5. **Tavily Map Tool** (`e124858`): Systematic domain exploration
+6. **Tool Integration** (`9f0f42c`): Strategic workflow patterns
+7. **Architecture Consolidation** (`27b2c77`): Single-agent implementation
+8. **Prompt Integration** (`beffaa5`): Brief and criteria-driven research
+9. **UI Implementation** (`c2cc493`): Streamlit monitoring interface
+
+### **Key Architectural Decisions Timeline**
+
+```
+Oct 18: Strategic Brief Generation → Success Criteria Foundation
+Oct 19: Tavily API Expansion → Tool Integration → Workflow Patterns  
+Oct 20: Architecture Consolidation → Final Integration → UI
+```
+
+---
+
+## **7. Technical Implementation Details**
+
+### **Core Architecture Components**
+
+1. **Scoping Phase**: Enhanced brief generation with success criteria
+2. **Research Phase**: Single-agent with strategic tool progression
+3. **Synthesis Phase**: Final report generation with comprehensive findings
+
+### **State Management Evolution**
+
+```python
+# Enhanced state with success criteria tracking
+class AgentState(MessagesState):
+    research_brief: Optional[str]
+    success_criteria: Annotated[Dict[str, bool], operator.or_] = Field(default_factory=dict)
+    supervisor_messages: Annotated[Sequence[BaseMessage], operator.add]
+    raw_notes: Annotated[list[str], operator.add] = []
+    final_report: Optional[str]
+```
+
+### **Tool Integration Pattern**
+
+```python
+# Strategic tool progression
+tools = [tavily_search, tavily_extract, tavily_map, think_tool]
+
+# Research workflow
+def llm_call(state: ResearcherState):
+    return {
+        "researcher_messages": [
+            model_with_tools.invoke(
+                [SystemMessage(content=research_agent_prompt)] + state["researcher_messages"]
+            )
+        ]
+    }
+```
+
+---
+
+## **8. Future Enhancement Roadmap**
+
+### **Immediate Next Steps**
+1. **Success Criteria Evaluation**: Implement real-time criteria satisfaction tracking
+2. **Dynamic Completion Logic**: Use criteria for intelligent research termination
+3. **Progress Visualization**: UI indicators for research progress against criteria
+
+### **Advanced Enhancements**
+1. **Adaptive Tool Selection**: ML-driven tool choice based on research patterns
+2. **Multi-Domain Specialization**: Specialized research strategies for different domains
+3. **Collaborative Research**: Multi-user research coordination
+
+---
+
+This enhanced documentation structure focuses specifically on the architectural decisions and improvements made since the fork, highlighting how the expanded Tavily API toolkit enabled the consolidation from multi-agent to single-agent architecture while improving research quality and strategic planning capabilities.
+
