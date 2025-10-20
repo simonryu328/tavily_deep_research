@@ -3,26 +3,14 @@
 ### **Executive Summary**
 
 This project extends the original LangChain "Deep Research From Scratch" repository with architectural improvements focused on **tool-informed research continuity** and **strategic research planning**. 
+
+The original repository demonstrated a three-phase architecture (Scope → Research → Write) with multi-agent coordination using a supervisor pattern and basic Tavily integration (single `tavily_search` tool). 
+
 The main changes include:
 
 1. **Tavily API Expansion**: Expanding from single `tavily_search` to a strategic three-tool workflow (`tavily_search` → `tavily_map` → `tavily_extract`)
 2. **Strategic Brief Generation**: Transforming research brief generation from simple questions to comprehensive strategic briefs with success criteria
 3. **Success Criteria Tracking**: Implementing automated success criteria tracking for research completion evaluation
-
----
-
-## **1. Project Foundation & Fork Context**
-
-### **Original Repository Overview**
-The project builds upon the LangChain "Deep Research From Scratch" tutorial, which demonstrates:
-- **Three-phase architecture**: Scope → Research → Write
-- **Multi-agent coordination**: Supervisor pattern with parallel sub-agents
-- **Basic Tavily integration**: Single `tavily_search` tool for web research
-- **Structured output patterns**: Pydantic schemas for reliable decision-making
-
-### **Key Architectural Decisions Made**
-
-The fork introduces three architectural changes that improve research quality and reasoning continuity:
 
 ---
 
@@ -46,17 +34,10 @@ tools = [tavily_search, tavily_extract, tavily_map, think_tool]
 
 **After**: `Search → Map → Extract → Think` (comprehensive exploration)
 
-#### **Tool Capabilities Added**
+#### **New Tool Capabilities**
 
-1. **`tavily_extract`** (Commit: `1245bbe`)
-   - **Purpose**: Extract and summarize full webpage content from specific URLs
-   - **Use Case**: Deep content analysis after identifying promising sources
-   - **Strategic Value**: Enables comprehensive content understanding vs. truncated search summaries
-
-2. **`tavily_map`** (Commit: `e124858`)
-   - **Purpose**: Discover all internal pages from a base website URL
-   - **Use Case**: Systematic exploration of documentation hubs and authoritative domains
-   - **Strategic Value**: Ensures comprehensive coverage of authoritative sources
+- **`tavily_extract`**: Extract and summarize full webpage content from specific URLs for deep content analysis
+- **`tavily_map`**: Discover all internal pages from authoritative domains for systematic exploration
 
 #### **Research Workflow Evolution**
 
@@ -72,13 +53,11 @@ The expanded toolkit enables a research progression:
 🧠 Think (strategic evaluation)
 ```
 
-This pattern allows the agent to:
-- **Start broad** with comprehensive searches
-- **Identify authoritative domains** through mapping
-- **Extract targeted content** for deep analysis
-- **Maintain context continuity** throughout the process
-
----
+This pattern enables:
+- **Broad exploration** with comprehensive searches
+- **Systematic domain mapping** of authoritative sources  
+- **Targeted content extraction** for deep analysis
+- **Context continuity** throughout the research process
 
 ---
 
@@ -94,11 +73,7 @@ You will return a single research question that will be used to guide the resear
 """
 ```
 
-**Limitations**:
-- **Single question focus**: Treats research as answering one question
-- **No strategic planning**: Lacks consideration of research methodology
-- **No success criteria**: No clear definition of completion
-- **Limited context interpretation**: Transcribes rather than interprets user needs
+**Limitations**: Single question focus, no strategic planning, no success criteria, limited context interpretation
 
 ### **Enhanced Strategic Brief Generation** (Commit: `1d3f1f4`)
 
@@ -113,7 +88,7 @@ Generate a strategic research brief from the conversation that interprets underl
 </task>
 ```
 
-### **Strategic Dimensions Added**
+### **Strategic Dimensions**
 
 1. **Intent Understanding**: What is the user trying to accomplish?
 2. **Constraint Identification**: Hard requirements vs. soft preferences
@@ -179,17 +154,11 @@ def parse_success_criteria(state: AgentState):
     return {"success_criteria": criteria_dict}
 ```
 
-### **Current Implementation Status**
+### **Implementation Status**
 
-**Implemented**:
-- ✅ Success criteria extraction from research briefs
-- ✅ Dictionary-based tracking in agent state
-- ✅ Integration with research brief generation
+**Implemented**: Success criteria extraction, dictionary-based tracking, integration with research brief generation
 
-**Future Enhancement** (Next Step):
-- 🔄 **Real-time evaluation**: Use criteria as "to-dos" for research completeness
-- 🔄 **Dynamic completion logic**: Improve `should_complete` research logic based on criteria satisfaction
-- 🔄 **Progress tracking**: Visual indicators of research progress against success criteria
+**Next Steps**: Real-time evaluation, dynamic completion logic, progress visualization
 
 ---
 
@@ -230,35 +199,21 @@ research_agent_prompt = """You are an expert research assistant conducting strat
 
 ## **6. Implementation Timeline & Commit Analysis**
 
-### **Development Progression** (October 18-20, 2025)
+### **Development Timeline** (October 18-20, 2025)
 
-1. **Research Brief Enhancement** (`1d3f1f4`): Strategic brief generation
-2. **Success Criteria Foundation** (`f5f60b9`): State management for criteria tracking
-3. **Criteria Parsing** (`b321655`): Automated extraction from briefs
-4. **Tavily Extract Tool** (`1245bbe`): Deep content analysis capability
-5. **Tavily Map Tool** (`e124858`): Systematic domain exploration
-6. **Tool Integration** (`9f0f42c`): Strategic workflow patterns
-7. **Architecture Consolidation** (`27b2c77`): Single-agent implementation
-8. **Prompt Integration** (`beffaa5`): Brief and criteria-driven research
-9. **UI Implementation** (`c2cc493`): Streamlit monitoring interface
-
-### **Key Architectural Decisions Timeline**
-
-```
-Oct 18: Strategic Brief Generation → Success Criteria Foundation
-Oct 19: Tavily API Expansion → Tool Integration → Workflow Patterns  
-Oct 20: Architecture Consolidation → Final Integration → UI
-```
+**Oct 18**: Research Brief Enhancement → Success Criteria Foundation  
+**Oct 19**: Tavily API Expansion (Extract + Map) → Tool Integration  
+**Oct 20**: Architecture Consolidation → Final Integration → UI
 
 ---
 
 ## **7. Technical Implementation Details**
 
-### **Core Architecture Components**
+### **Architecture Components**
 
 1. **Scoping Phase**: Enhanced brief generation with success criteria
-2. **Research Phase**: Single-agent with strategic tool progression
-3. **Synthesis Phase**: Final report generation with comprehensive findings
+2. **Research Phase**: Single-agent with strategic tool progression  
+3. **Synthesis Phase**: Final report generation
 
 ### **State Management Evolution**
 
@@ -293,17 +248,17 @@ def llm_call(state: ResearcherState):
 
 ## **8. Future Enhancement Roadmap**
 
-### **Immediate Next Steps**
-1. **Success Criteria Evaluation**: Implement real-time criteria satisfaction tracking
-2. **Dynamic Completion Logic**: Use criteria for intelligent research termination
-3. **Progress Visualization**: UI indicators for research progress against criteria
+### **Next Steps**
+1. **Success Criteria Evaluation**: Real-time criteria satisfaction tracking
+2. **Dynamic Completion Logic**: Criteria-based research termination
+3. **Progress Visualization**: UI indicators for research progress
 
-### **Advanced Enhancements**
+### **Future Enhancements**
 1. **Adaptive Tool Selection**: ML-driven tool choice based on research patterns
 2. **Multi-Domain Specialization**: Specialized research strategies for different domains
 3. **Collaborative Research**: Multi-user research coordination
 
 ---
 
-This enhanced documentation structure focuses specifically on the architectural decisions and improvements made since the fork, highlighting how the expanded Tavily API toolkit enabled the consolidation from multi-agent to single-agent architecture while improving research quality and strategic planning capabilities.
+This documentation focuses on the architectural decisions and improvements made since the fork, highlighting how the expanded Tavily API toolkit improved research quality and strategic planning capabilities.
 
