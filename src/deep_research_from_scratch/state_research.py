@@ -16,16 +16,30 @@ from langgraph.graph.message import add_messages
 
 class ResearcherState(TypedDict):
     """
-    State for the research agent containing message history and research metadata.
+    State for the research agent containing message history, topic context,
+    success criteria, and accumulated research outputs.
 
-    This state tracks the researcher's conversation, iteration count for limiting
-    tool calls, the research topic being investigated, compressed findings,
-    and raw research notes for detailed analysis.
+    Notes:
+    - `research_topic` holds the full research brief (for simplicity, name remains).
+    - `success_criteria` is a dict mapping each criterion to a boolean indicating completion.
     """
+
+    # Conversational context between LLM and tools
     researcher_messages: Annotated[Sequence[BaseMessage], add_messages]
+
+    # Iteration tracker to prevent infinite loops
     tool_call_iterations: int
+
+    # The main research brief (originally called research_topic)
     research_topic: str
+
+    # Structured criteria for research completeness
+    success_criteria: Annotated[Dict[str, bool], operator.or_]
+
+    # Compressed summary after synthesis
     compressed_research: str
+
+    # Raw notes or tool results accumulated during process
     raw_notes: Annotated[List[str], operator.add]
 
 class ResearcherOutputState(TypedDict):
