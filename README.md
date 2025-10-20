@@ -197,7 +197,7 @@ research_agent_prompt = """You are an expert research assistant conducting strat
 
 ---
 
-## **6. Future Enhancement Roadmap**
+## **5. Future Enhancement Roadmap**
 
 ### **Next Steps**
 1. **Success Criteria Evaluation**: Real-time criteria satisfaction tracking
