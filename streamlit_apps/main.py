@@ -44,13 +44,12 @@ with col2:
     model_console = st.empty()
 
 # ===== SIDEBAR INFO =====
-st.sidebar.header("Agent State (Live Updates)")
 sidebar_brief = st.sidebar.empty()
 sidebar_criteria = st.sidebar.empty()
 
 # Initialize placeholders
-sidebar_brief.markdown("**Research Brief:** _(awaiting update...)_")
-sidebar_criteria.markdown("**Success Criteria:** _(awaiting update...)_")
+sidebar_brief.markdown("**Research Brief:**")
+sidebar_criteria.markdown("**Success Criteria:**")
 
 # ===== INPUT UI =====
 st.markdown("---")
@@ -159,7 +158,7 @@ async def run_agent_stream():
                 criteria = out.get("success_criteria")
                 if isinstance(criteria, dict) and criteria:
                     formatted = "<br>".join(
-                        [f"- {escape(k)}: {'✅' if v else '❌'}" for k, v in criteria.items()]
+                        [f"- {escape(k)}: {'Complete' if v else 'Not Complete'}" for k, v in criteria.items()]
                     )
                     sidebar_criteria.markdown(
                         f"**Success Criteria:**<br>{formatted}", unsafe_allow_html=True
