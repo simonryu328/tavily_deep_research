@@ -178,13 +178,22 @@ Generate a strategic research brief from the conversation that interprets underl
 
 ### **Example Transformation**
 
-**Before**: "Research IBM watsonx Orchestrate architecture"
+**Before**: 
+```
+I want to understand the underlying architecture of IBM watsonx Orchestrate, with a specific focus on how its orchestration and agent runtime layer is built.
+My goal is to identify exactly which frameworks, technologies, and APIs are integrated into this layer, and to determine whether it uses LangGraph, Langfuse, or Langflow as part of its implementation.
+Please provide a detailed breakdown of the orchestration and agent runtime components, listing all known frameworks and APIs involved, and clarify the role (if any) of LangGraph, Langfuse, and Langflow.
+If there are proprietary IBM tools or other third- party frameworks in use, include those as well. Unless otherwise specified in public technical documentation, treat any unspecified architectural details as open for investigation.
+Prioritize information from official IBM documentation, technical whitepapers, and reputable developer sources.
+```
 
 **After**: 
 ```
-I'm investigating the underlying architecture of IBM watsonx Orchestrate, specifically the orchestration and agent runtime layer—not marketing overviews of what the product does. I need implementation-level detail: which frameworks are integrated, what APIs are exposed to developers, and definitive answers on whether LangGraph, Langfuse, or Langflow are part of the system.
+I'm investigating the underlying architecture of IBM watsonx Orchestrate, specifically the orchestration and agent runtime layer—not marketing overviews of what the product does. 
+I need implementation-level detail: which frameworks are integrated, what APIs are exposed to developers, and definitive answers on whether LangGraph, Langfuse, or Langflow are part of the system.
 
-**Deliver the following:** Definitive integration status for each framework (LangGraph: yes/no with evidence, Langfuse: yes/no with evidence, Langflow: yes/no with evidence). Document the developer-facing APIs and SDKs available for building with watsonx Orchestrate...
+**Deliver the following:** Definitive integration status for each framework (LangGraph: yes/no with evidence, Langfuse: yes/no with evidence, Langflow: yes/no with evidence).
+Document the developer-facing APIs and SDKs available for building with watsonx Orchestrate...
 
 ### Success Criteria
 - LangGraph integration status confirmed: yes or no with specific evidence from official sources
