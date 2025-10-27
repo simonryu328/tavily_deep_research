@@ -82,13 +82,13 @@ jupyter notebook
 
 5. Run the UI:
 
-1. assistant-ui
+- assistant-ui
 ```bash
 cd assistant_ui_app
 npm run dev
 ```
 
-2. streamlit
+- streamlit
 ```bash
 uv run streamlit run streamlit_apps/main.py
 ```
