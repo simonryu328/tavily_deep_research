@@ -1,9 +1,10 @@
 """
 Enhanced Streamlit Monitor for Tavily Deep Research Agent
+(Final optimized version — single run, guaranteed final report)
 
-Displays real-time LangGraph events (nodes and models)
-and dynamically updates research_brief and success_criteria
-from AgentState in the sidebar.
+Streams real-time LangGraph events (nodes and models),
+updates research_brief and success_criteria dynamically in sidebar,
+and retrieves the final_report safely from memory via get_state().
 """
 
 import asyncio
@@ -20,19 +21,16 @@ from langgraph.checkpoint.memory import InMemorySaver
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from deep_research_from_scratch.tavily_deep_research_agent import agent, deep_researcher_builder
-
-# Compile the agent with checkpointer
-# checkpointer = InMemorySaver()
-# agent = deep_researcher_builder.compile(checkpointer=checkpointer)
-# agent = deep_researcher_builder.compile()
-
+# ===== AGENT INITIALIZATION =====
+from deep_research_from_scratch.tavily_deep_research_agent import deep_researcher_builder
+checkpointer = InMemorySaver()
+agent = deep_researcher_builder.compile(checkpointer=checkpointer)
 
 # ===== STREAMLIT CONFIG =====
 st.set_page_config(page_title="Tavily Deep Research Agent App", layout="centered")
 st.title("Tavily Deep Research Agent")
 
-# ===== CONSOLE LAYOUT (TOP) =====
+# ===== CONSOLE LAYOUT =====
 col1, col2 = st.columns(2)
 
 with col1:
@@ -46,8 +44,6 @@ with col2:
 # ===== SIDEBAR INFO =====
 sidebar_brief = st.sidebar.empty()
 sidebar_criteria = st.sidebar.empty()
-
-# Initialize placeholders
 sidebar_brief.markdown("**Research Brief:**")
 sidebar_criteria.markdown("**Success Criteria:**")
 
@@ -56,14 +52,18 @@ st.markdown("---")
 user_input = st.text_area(
     "Enter a research topic:",
     placeholder="What do you want to research?",
-    height=120,  # adjust as you like (in px)
+    height=200,
 )
 
 start_btn = st.button("Run Research")
-
 final_report_box = st.empty()
 
-# ===== TEXT CONVERSION UTILITY =====
+# ===== SESSION CONTROL =====
+if "is_running" not in st.session_state:
+    st.session_state["is_running"] = False
+
+
+# ===== UTILITY =====
 def to_text(x: Any) -> str:
     """Safely convert LangGraph event payloads or message chunks to readable text."""
     if isinstance(x, str):
@@ -71,8 +71,7 @@ def to_text(x: Any) -> str:
     try:
         from langchain_core.messages import BaseMessage
         if isinstance(x, BaseMessage):
-            content = getattr(x, "content", None)
-            return str(content or x)
+            return str(getattr(x, "content", x))
     except Exception:
         pass
     try:
@@ -80,9 +79,9 @@ def to_text(x: Any) -> str:
     except Exception:
         return str(x)
 
-# ===== RENDERER =====
+
 def update_console(console_placeholder, buffer, height=600):
-    """Render the console buffer with auto-scroll."""
+    """Render console buffer with auto-scroll."""
     html = f"""
     <div id='console' style='height:{height}px; overflow-y:auto; border:1px solid #ccc;
                 padding:8px; background-color:#fafafa; font-family:monospace;
@@ -98,17 +97,12 @@ def update_console(console_placeholder, buffer, height=600):
     """
     console_placeholder.markdown(html, unsafe_allow_html=True)
 
+
 # ===== STREAMING FUNCTION =====
-async def run_agent_stream():
+async def run_agent_stream(user_input: str):
     node_buffer = []
     model_buffer = []
-
-    thread_config = {
-        "configurable": {
-            "thread_id": "1",
-            "recursion_limit": 50,
-        }
-    }
+    thread_config = {"configurable": {"thread_id": "1", "recursion_limit": 50}}
 
     async for e in agent.astream_events(
         {"messages": [HumanMessage(content=user_input)]},
@@ -129,53 +123,57 @@ async def run_agent_stream():
         elif event == "on_graph_end":
             node_buffer.append("[GRAPH END] Execution complete.")
 
-        # ===== MODEL STREAMING =====
+        # ===== MODEL STREAM =====
         elif event == "on_chat_model_stream":
             chunk = to_text(data.get("chunk", ""))
-            if not chunk.strip():
-                continue
-            if model_buffer and model_buffer[-1].startswith("[stream]"):
-                model_buffer[-1] += chunk
-            else:
-                model_buffer.append("[stream] " + chunk)
+            if chunk.strip():
+                if model_buffer and model_buffer[-1].startswith("[stream]"):
+                    model_buffer[-1] += chunk
+                else:
+                    model_buffer.append("[stream] " + chunk)
         elif event == "on_chat_model_end":
             if model_buffer and model_buffer[-1].startswith("[stream]"):
                 model_buffer[-1] = model_buffer[-1].replace("[stream] ", "")
             model_buffer.append("[MODEL OUTPUT END]")
 
-        # ===== AGENTSTATE EXTRACTION (fix) =====
+        # ===== AGENTSTATE UPDATES =====
         if event == "on_chain_end":
             out = data.get("output")
-
-            # We only care about AgentState-like dicts (TypedDict is a dict at runtime)
             if isinstance(out, dict):
-                # research_brief
                 brief = out.get("research_brief")
                 if brief:
                     sidebar_brief.markdown(f"**Research Brief:**\n\n{escape(str(brief))}")
 
-                # success_criteria
                 criteria = out.get("success_criteria")
                 if isinstance(criteria, dict) and criteria:
                     formatted = "<br>".join(
-                        [f"- {escape(k)}: {'Complete' if v else 'Not Complete'}" for k, v in criteria.items()]
+                        [f"- {escape(k)}: {'Complete' if v else 'Not Complete'}"
+                         for k, v in criteria.items()]
                     )
                     sidebar_criteria.markdown(
-                        f"**Success Criteria:**<br>{formatted}", unsafe_allow_html=True
+                        f"**Success Criteria:**<br>{formatted}",
+                        unsafe_allow_html=True,
                     )
 
-        # ===== RENDER UPDATES =====
+        # ===== RENDER LIVE =====
         update_console(node_console, node_buffer)
         update_console(model_console, model_buffer)
 
-    # ===== FINAL REPORT =====
-    final_state = await agent.ainvoke({"messages": [HumanMessage(content=user_input)]})
+    # ===== RETRIEVE FINAL STATE SAFELY =====
+    final_state = agent.get_state(thread_config["configurable"])
+
     report = ""
     if isinstance(final_state, dict):
         report = final_state.get("final_report", "")
+
     final_report_box.markdown(f"### Final Report\n\n{report or '(No final report generated)'}")
 
+
 # ===== MAIN ACTION =====
-if start_btn and user_input:
+if start_btn and user_input and not st.session_state["is_running"]:
+    st.session_state["is_running"] = True
     st.info("Running agent and streaming events...")
-    asyncio.run(run_agent_stream())
+    try:
+        asyncio.run(run_agent_stream(user_input))
+    finally:
+        st.session_state["is_running"] = False
