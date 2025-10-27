@@ -2,11 +2,10 @@
 
 ### Executive Summary
 
-This project extends the original LangChain "Deep Research From Scratch" repository with custom implementations that include:
-- Tavily extract and map endpoints
-- AI chat frontend built using assistant-ui, a TypeScript/React library for AI chat.
+Built with **LangGraph**, **Tavily**, and **OpenAI/watsonx.ai**, this project is a **personal research agent** that autonomously explores, maps, and synthesizes information through a **custom-built chat interface** in **React**.
 
 ![demo](/assets/assistant_ui.gif)
+
 
 ### Prerequisites
 
