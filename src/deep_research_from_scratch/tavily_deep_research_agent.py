@@ -63,7 +63,7 @@ async def final_report_generation(state: AgentState):
     Synthesizes all research findings into a comprehensive final report
     """
 
-    notes = state.get("notes", [])
+    notes = state.get("raw_notes", [])
 
     findings = "\n".join(notes)
 
