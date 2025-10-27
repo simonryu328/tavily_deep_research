@@ -1,4 +1,12 @@
-# **Tavily Deep Research Agent**
+# Tavily Deep Research Agent
+
+### Executive Summary
+
+This project extends the original LangChain "Deep Research From Scratch" repository with custom implementations that include:
+- Tavily extract and map endpoints
+- AI chat frontend built using assistant-ui, a TypeScript/React library for AI chat.
+
+![demo](/assets/assistant_ui.gif)
 
 ### Prerequisites
 
@@ -77,18 +85,6 @@ jupyter notebook
 ```bash
 uv run streamlit run streamlit_apps/main.py
 ```
-
-### **Executive Summary**
-
-This project extends the original LangChain "Deep Research From Scratch" repository with architectural improvements focused on **tool-informed research continuity** and **strategic research planning**. 
-
-The original repository demonstrated a three-phase architecture (Scope → Research → Write) with multi-agent coordination using a supervisor pattern and basic Tavily integration (single `tavily_search` tool). 
-
-The main changes include:
-
-1. **Tavily API Expansion**: Expanding from single `tavily_search` to a strategic three-tool workflow (`tavily_search` → `tavily_map` → `tavily_extract`)
-2. **Strategic Brief Generation**: Transforming research brief generation from simple questions to comprehensive strategic briefs with success criteria
-3. **Success Criteria Tracking**: Implementing automated success criteria tracking for research completion evaluation
 
 ---
 
