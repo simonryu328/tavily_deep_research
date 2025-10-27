@@ -80,7 +80,15 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 jupyter notebook
 ```
 
-5. Run the streamlit UI:
+5. Run the UI:
+
+1. assistant-ui
+```bash
+cd assistant_ui_app
+npm run dev
+```
+
+2. streamlit
 ```bash
 uv run streamlit run streamlit_apps/main.py
 ```
