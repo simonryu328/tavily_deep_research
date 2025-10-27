@@ -93,7 +93,7 @@ deep_researcher_builder.add_node("final_report_generation", final_report_generat
 
 # ===== Connect the edges =====
 deep_researcher_builder.add_edge(START, "clarify_with_user")
-deep_researcher_builder.add_edge("clarify_with_user", "write_research_brief")
+# deep_researcher_builder.add_edge("clarify_with_user", "write_research_brief")
 deep_researcher_builder.add_edge("write_research_brief", "parse_success_criteria")
 deep_researcher_builder.add_edge("parse_success_criteria", "run_researcher_agent")
 deep_researcher_builder.add_edge("run_researcher_agent", "final_report_generation")
